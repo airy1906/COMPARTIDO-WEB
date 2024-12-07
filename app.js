@@ -9,7 +9,15 @@ const port = 3000;
 app.use(bodyParser.json());
 
 // Almacenamiento de productos en memoria
-let products = [];
+//let products = [];
+
+// Almacenamiento de productos en memoria con 50 productos iniciales
+let products = Array.from({ length: 50 }, (_, i) => ({
+    id: i + 1,
+    name: `Producto ${i + 1}`,
+    price: (Math.random() * 100).toFixed(2),
+    inventory: Math.floor(Math.random() * 100) // Inventario aleatorio entre 0 y 100
+}));
 
 // Rutas
 
@@ -68,6 +76,44 @@ app.delete('/products/:id', (req, res) => {
     products.splice(productIndex, 1);
     res.status(204).send(); // No Content
 });
+
+// Incrementar inventario
+app.post('/products/:id/increase-inventory', (req, res) => {
+    const product = products.find(p => p.id === parseInt(req.params.id));
+    if (!product) {
+        return res.status(404).send('Producto no encontrado');
+    }
+
+    const { quantity } = req.body;
+    if (!quantity || quantity <= 0) {
+        return res.status(400).send('Cantidad debe ser un número mayor que 0');
+    }
+
+    product.inventory += parseInt(quantity, 10);
+    res.json(product);
+});
+
+
+// Reducir inventario
+app.post('/products/:id/decrease-inventory', (req, res) => {
+    const product = products.find(p => p.id === parseInt(req.params.id));
+    if (!product) {
+        return res.status(404).send('Producto no encontrado');
+    }
+
+    const { quantity } = req.body;
+    if (!quantity || quantity <= 0) {
+        return res.status(400).send('Cantidad debe ser un número mayor que 0');
+    }
+
+    if (product.inventory < quantity) {
+        return res.status(400).send('Inventario insuficiente');
+    }
+
+    product.inventory -= parseInt(quantity, 10);
+    res.json(product);
+});
+
 
 // Servidor
 app.listen(port, () => {
